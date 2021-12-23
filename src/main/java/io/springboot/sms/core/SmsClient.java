@@ -132,6 +132,29 @@ public class SmsClient {
 	}
 
 	/**
+	 * 发送短信验证码.(默认第一个渠道)
+	 * @param phoneNumbers 手机号码(中国)
+	 * @param code 验证码
+	 * @return 验证码
+	 */
+	public String sendCode(final String code, final String... phoneNumbers) {
+		if (!checkSmsTemplate()) {
+			return null;
+		}
+
+		String defaultKey = smsTemplates.keySet().iterator().next();
+		Utils.checkPhoneNumber(phoneNumbers);
+		final SmsTemplate smsTemplate = this.smsTemplates.get(defaultKey);
+		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + defaultKey);
+
+		smsTemplate.setTemplateCode(defaultKey);
+		smsTemplate.setTemplateParam(Collections.singletonMap("code", code));
+		smsTemplate.setPhoneNumbers(Arrays.asList(phoneNumbers));
+		send(smsTemplate);
+		return code;
+	}
+
+	/**
 	 * 发送短信验证码.(通过短信模板key)
 	 * @param smsTemplateKey 模板key
 	 * @param phoneNumbers 手机号码(中国)
