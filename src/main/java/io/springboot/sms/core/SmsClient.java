@@ -29,9 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
-import static io.springboot.sms.kit.Utils.checkPhoneNumber;
-import static io.springboot.sms.kit.Utils.checkSmsResponse;
-
 /**
  * 阿里云 SMS 客户端.
  *
@@ -45,10 +42,10 @@ public class SmsClient {
 	 */
 	private Map<String, IAcsClient> acsClients = new HashMap<>();
 
-	private Map<String, SmsTemplate> smsTemplates = new HashMap<>();
+	private Map<String, SmsTemplate> smsTemplates;
 
 	public SmsClient(SmsProperties smsProperties) {
-		if (smsProperties.getSms() == null) {
+		if (smsProperties == null || smsProperties.getSms() == null) {
 			log.warn("阿里云短信通道未配置,短信发送暂不可用");
 			return;
 		}
@@ -82,7 +79,7 @@ public class SmsClient {
 	 */
 	public String sendVerificationCode(final String code, final String... phoneNumbers) {
 		checkSmsTemplate();
-		checkPhoneNumber(phoneNumbers);
+		Utils.checkPhoneNumber(phoneNumbers);
 		int size = smsTemplates.size();
 		if (size == 0) {
 			throw new IllegalArgumentException("Invalid Templates");
@@ -103,7 +100,7 @@ public class SmsClient {
 	 * 校验是否可用
 	 */
 	private boolean checkSmsTemplate() {
-		if (this.smsTemplates.isEmpty()) {
+		if (smsTemplates == null || this.smsTemplates.isEmpty()) {
 			log.warn("阿里云短信通道配置错误,短信发送暂不可用,验证码注意 日志输出");
 			return false;
 		}
@@ -123,7 +120,7 @@ public class SmsClient {
 		if (!checkSmsTemplate()) {
 			return null;
 		}
-		checkPhoneNumber(phoneNumbers);
+		Utils.checkPhoneNumber(phoneNumbers);
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
 
@@ -145,7 +142,7 @@ public class SmsClient {
 		if (!checkSmsTemplate()) {
 			return;
 		}
-		checkPhoneNumber(phoneNumbers);
+		Utils.checkPhoneNumber(phoneNumbers);
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
 
@@ -209,7 +206,7 @@ public class SmsClient {
 		try {
 			IAcsClient iAcsClient = acsClients.get(smsTemplate.getTemplateCode());
 			final CommonResponse response = iAcsClient.getCommonResponse(request);
-			checkSmsResponse(response);
+			Utils.checkSmsResponse(response);
 		}
 		catch (final ClientException e) {
 			throw new SmsException(e);
