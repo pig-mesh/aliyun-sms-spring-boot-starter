@@ -25,16 +25,19 @@ import com.aliyuncs.profile.IClientProfile;
 import com.aliyuncs.utils.StringUtils;
 import io.springboot.sms.SmsProperties;
 import io.springboot.sms.kit.Utils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
-import static io.springboot.sms.kit.Utils.*;
+import static io.springboot.sms.kit.Utils.checkPhoneNumber;
+import static io.springboot.sms.kit.Utils.checkSmsResponse;
 
 /**
  * 阿里云 SMS 客户端.
  *
  * @author cn-src
  */
+@Slf4j
 public class SmsClient {
 
 	/**
@@ -42,9 +45,13 @@ public class SmsClient {
 	 */
 	private Map<String, IAcsClient> acsClients = new HashMap<>();
 
-	private Map<String, SmsTemplate> smsTemplates;
+	private Map<String, SmsTemplate> smsTemplates = new HashMap<>();
 
 	public SmsClient(SmsProperties smsProperties) {
+		if (smsProperties.getSms() == null) {
+			log.warn("阿里云短信通道未配置,短信发送暂不可用");
+			return;
+		}
 
 		this.smsTemplates = smsProperties.getSms();
 
@@ -74,8 +81,8 @@ public class SmsClient {
 	 * @return 6 位数的随机码
 	 */
 	public String sendVerificationCode(final String code, final String... phoneNumbers) {
+		checkSmsTemplate();
 		checkPhoneNumber(phoneNumbers);
-
 		int size = smsTemplates.size();
 		if (size == 0) {
 			throw new IllegalArgumentException("Invalid Templates");
@@ -93,6 +100,19 @@ public class SmsClient {
 	}
 
 	/**
+	 * 校验是否可用
+	 */
+	private boolean checkSmsTemplate() {
+		if (this.smsTemplates.isEmpty()) {
+			log.warn("阿里云短信通道配置错误,短信发送暂不可用,验证码注意 日志输出");
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
+	/**
 	 * 发送短信验证码.(通过短信模板key)
 	 * @param smsTemplateKey 模板key
 	 * @param phoneNumbers 手机号码(中国)
@@ -100,6 +120,9 @@ public class SmsClient {
 	 * @return 验证码
 	 */
 	public String sendCodeByKey(final String smsTemplateKey, final String code, final String... phoneNumbers) {
+		if (!checkSmsTemplate()) {
+			return null;
+		}
 		checkPhoneNumber(phoneNumbers);
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
@@ -119,6 +142,9 @@ public class SmsClient {
 	 */
 	public void sendParamByKey(final String smsTemplateKey, final Map<String, String> params,
 			final String... phoneNumbers) {
+		if (!checkSmsTemplate()) {
+			return;
+		}
 		checkPhoneNumber(phoneNumbers);
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
@@ -134,6 +160,9 @@ public class SmsClient {
 	 * @param smsTemplateKey 预置短信模板 key
 	 */
 	public void send(final String smsTemplateKey) {
+		if (!checkSmsTemplate()) {
+			return;
+		}
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		smsTemplate.setTemplateCode(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
@@ -147,6 +176,9 @@ public class SmsClient {
 	 * @param phoneNumbers 手机号码，优先于预置短信模板中配置的手机号码
 	 */
 	public void send(final String smsTemplateKey, final String... phoneNumbers) {
+		if (!checkSmsTemplate()) {
+			return;
+		}
 		final SmsTemplate smsTemplate = this.smsTemplates.get(smsTemplateKey);
 		smsTemplate.setTemplateCode(smsTemplateKey);
 		Objects.requireNonNull(smsTemplate, () -> "SmsTemplate must be not null, key:" + smsTemplateKey);
@@ -161,7 +193,9 @@ public class SmsClient {
 	 */
 	public void send(final SmsTemplate smsTemplate) {
 		Objects.requireNonNull(smsTemplate);
-		checkSmsTemplate(smsTemplate);
+		if (!checkSmsTemplate()) {
+			return;
+		}
 
 		final CommonRequest request = new CommonRequest();
 		request.setSysMethod(MethodType.POST);
