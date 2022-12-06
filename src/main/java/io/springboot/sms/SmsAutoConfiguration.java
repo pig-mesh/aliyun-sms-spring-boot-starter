@@ -15,6 +15,7 @@ package io.springboot.sms;
 
 import io.springboot.sms.core.SmsClient;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,7 +27,8 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author cn-src
  */
-@Configuration
+@AutoConfiguration
+@Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor
 @ConditionalOnClass(name = "com.aliyuncs.IAcsClient")
 @EnableConfigurationProperties(SmsProperties.class)

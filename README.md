@@ -7,6 +7,10 @@ Fork Github & Issues: [https://github.com/cn-src/aliyun-sms](https://github.com/
 # spring boot 集成
 
 ## 1. 添加依赖
+| 版本 | 支持 |
+|-------|--|
+| 3.0.0 | 适配 SpringBoot3.x |
+| 2.0.2 | 适配 SpringBoot2.x |
 
 ``` xml
 <dependency>
